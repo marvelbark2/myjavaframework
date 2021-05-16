@@ -33,6 +33,7 @@ public class BaseHandler implements HttpHandler {
             System.out.println(routes);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+            System.exit(-1);
         }
     }
 
@@ -45,11 +46,16 @@ public class BaseHandler implements HttpHandler {
             if(route.getBaseRoute().equals(path) && route.getMethod().equals(HttpMethod.GET)) {
                 router = route;
             }
-            else if(path.startsWith(router.getBaseRoute()) && router.getParam().equals("id")) {
-//                router = route;
-//                String[] split = path.split("/");
-//                params = split[split.length - 1];
-            }
+            System.out.println(path);
+           /* else {
+                assert router != null;
+                if(path.startsWith(router.getBaseRoute()) && router.getParam().equals("id")) {
+    //                router = route;
+    //                String[] split = path.split("/");
+    //                params = split[split.length - 1];
+                    System.out.println("I'm here");
+                }
+            }*/
         }
         System.out.println(router);
         if(router != null) {
@@ -62,9 +68,11 @@ public class BaseHandler implements HttpHandler {
                        handleResponse(exchange, requestParamValue);
                    } catch (Exception ex) {
                        ex.printStackTrace();
+                       exchange.close();
                    }
                } catch (Exception e) {
                    e.printStackTrace();
+                   exchange.close();
                }
            } else {
                try {
@@ -78,6 +86,7 @@ public class BaseHandler implements HttpHandler {
                    }
                } catch (Exception e) {
                    e.printStackTrace();
+                   exchange.close();
                }
            }
         } else {
