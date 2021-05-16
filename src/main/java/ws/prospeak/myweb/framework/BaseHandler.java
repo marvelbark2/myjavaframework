@@ -14,10 +14,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -46,7 +43,11 @@ public class BaseHandler implements HttpHandler {
             if(route.getBaseRoute().equals(path) && route.getMethod().equals(HttpMethod.GET)) {
                 router = route;
             }
-            System.out.println(path);
+            else {
+                System.out.println(path + " is started with " + route.getBaseRoute());
+            }
+
+
            /* else {
                 assert router != null;
                 if(path.startsWith(router.getBaseRoute()) && router.getParam().equals("id")) {
@@ -90,6 +91,8 @@ public class BaseHandler implements HttpHandler {
                }
            }
         } else {
+            List<String> splitedPath = Arrays.stream(path.split("/")).collect(Collectors.toList());
+
             notFound(exchange);
         }
 
