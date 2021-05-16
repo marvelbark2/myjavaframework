@@ -10,11 +10,8 @@ import ws.prospeak.myweb.framework.Illuminate.routing.CallBack;
 import ws.prospeak.myweb.framework.Illuminate.routing.HttpMethod;
 import ws.prospeak.myweb.framework.Illuminate.routing.RouteFacade;
 import ws.prospeak.myweb.framework.Illuminate.routing.Router;
-import ws.prospeak.myweb.framework.app.models.ValueExampleObject;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -125,33 +122,14 @@ public class BaseHandler implements HttpHandler {
     private void handleResponse(HttpExchange httpExchange, Object callback) throws Exception {
         OutputStream outputStream = httpExchange.getResponseBody();
 
-        Configuration cfg = new Configuration(Configuration.VERSION_2_3_28);
-        cfg.setClassForTemplateLoading(BaseHandler.class, "/views/");
-
-        Map<String, Object> input = new HashMap<>();
-        input.put("title", callback.toString());
-
-        input.put("exampleObject", new ValueExampleObject("Java object", "me"));
-
-        List<ValueExampleObject> systems = new ArrayList<>();
-        systems.add(new ValueExampleObject("Android", "Google"));
-        systems.add(new ValueExampleObject("iOS States", "Apple"));
-        systems.add(new ValueExampleObject("Ubuntu", "Canonical"));
-        systems.add(new ValueExampleObject("Windows7", "Microsoft"));
-        input.put("systems", systems);
-
-        Template template = cfg.getTemplate("test.egde");
-
-        StringWriter stringWriter = new StringWriter();
-
-        template.process(input, stringWriter);
-        String htmlResponse = stringWriter.toString();
+        String htmlResponse = callback.toString();
 
         // this line is a must
         httpExchange.sendResponseHeaders(200, htmlResponse.length());
-        outputStream.write(htmlResponse.getBytes());
-        outputStream.flush();
-        outputStream.close();
+        PrintWriter writer = new PrintWriter(outputStream);
+        writer.print(htmlResponse);
+        writer.flush();
+        writer.close();
     }
     private void notFound(HttpExchange httpExchange) {
         OutputStream outputStream = httpExchange.getResponseBody();

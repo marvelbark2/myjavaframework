@@ -1,22 +1,5 @@
-<html>
-<head>
-  <title>My Own framework </title>
-</head>
-<body>
-   <ul>
-    <li> <a href="/">Home</a> </li>
-    <li> <a href="/about">About</a> </li>
-    <li> <a href="/hello">Hello</a> </li>
-   </ul>
-  <h1>${title}</h1>
+<#import "layout/base.egde" as u>
 
-  <p>${exampleObject.name} by ${exampleObject.developer}</p>
-
-  <ul>
-    <#list systems as system>
-      <li>${system_index + 1}. ${system.name} from ${system.developer}</li>
-    </#list>
-  </ul>
-
-</body>
-</html>
+<@u.page>
+<h1>Hello Test</h1>
+</@u.page>
