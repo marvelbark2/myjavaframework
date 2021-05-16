@@ -1,4 +1,4 @@
-package ws.prospeak.myweb.framework.Illuminate;
+package ws.prospeak.myweb.framework.Illuminate.routing;
 
 import java.lang.reflect.Method;
 
@@ -6,9 +6,9 @@ public class Router {
     private String baseRoute;
     private String param;
     private HttpMethod method;
-    private Method callback;
+    private Object callback;
 
-    public Router(String baseRoute, String param, HttpMethod method, Method callback) {
+    public Router(String baseRoute, String param, HttpMethod method, Object callback) {
         this.baseRoute = baseRoute;
         this.param = param;
         this.method = method;
@@ -27,7 +27,7 @@ public class Router {
         return method;
     }
 
-    public Method getCallback() {
+    public Object getCallback() {
         return callback;
     }
 

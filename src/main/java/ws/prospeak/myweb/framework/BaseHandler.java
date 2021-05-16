@@ -5,9 +5,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import ws.prospeak.myweb.framework.Illuminate.HttpMethod;
-import ws.prospeak.myweb.framework.Illuminate.RouteFacade;
-import ws.prospeak.myweb.framework.Illuminate.Router;
+import org.apache.commons.lang.StringUtils;
+import ws.prospeak.myweb.framework.Illuminate.routing.CallBack;
+import ws.prospeak.myweb.framework.Illuminate.routing.HttpMethod;
+import ws.prospeak.myweb.framework.Illuminate.routing.RouteFacade;
+import ws.prospeak.myweb.framework.Illuminate.routing.Router;
 import ws.prospeak.myweb.framework.app.models.ValueExampleObject;
 
 import java.io.IOException;
@@ -15,7 +17,8 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -39,47 +42,71 @@ public class BaseHandler implements HttpHandler {
         Router router = null;
         Object params = null;
         String path = exchange.getRequestURI().getPath();
-        for (Router route: routes) {
-            if(route.getBaseRoute().equals(path) && route.getMethod().equals(HttpMethod.GET)) {
-                router = route;
+        if(! path.equals("/")) {
+            List<String> routeList = Arrays.stream(path.split("/")).collect(Collectors.toList());
+            if(routeList.size() > 0) {
+                routeList.remove(0);
+                routeList.add(0, "/"+ routeList.remove(0));
             }
-            else {
-                System.out.println(path + " is started with " + route.getBaseRoute());
-            }
+            LinkedList<String> routeLinkedList = new LinkedList<>(routeList);
+            String pathBase = routeLinkedList.getFirst();
+            for (Router route: routes) {
+                String routeBase = route.getBaseRoute();
+                if(route.getMethod().equals(HttpMethod.GET)) {
+                    if(pathBase.equals(routeBase)) {
+                        if(routeLinkedList.size() == 1 && route.getParam() == null)
+                            router = route;
+                        else if(routeLinkedList.size() > 1 && route.getParam() != null) {
+                            StringUtils.difference("/about/:id/cast", "/about/25/cast");
+                            params = routeLinkedList.getLast();
+                            router = route;
+                        }
+                    }
 
-
-           /* else {
-                assert router != null;
-                if(path.startsWith(router.getBaseRoute()) && router.getParam().equals("id")) {
-    //                router = route;
-    //                String[] split = path.split("/");
-    //                params = split[split.length - 1];
-                    System.out.println("I'm here");
                 }
-            }*/
+                else {
+                    System.out.println(path + " is started with " + routeLinkedList.getFirst());
+                }
+            }
+        } else {
+            router = routes.stream().filter(router1 -> router1.getBaseRoute().equals("/")).findFirst().orElse(null);
         }
+
         System.out.println(router);
         if(router != null) {
            if(router.getParam() == null) {
                try {
-                   Method response = router.getCallback();
-                   Class.forName(response.getDeclaringClass().getName());
-                   Object requestParamValue = response.invoke(response.getDeclaringClass().newInstance(), null);
+                   Object callback = router.getCallback();
+                   Object requestParamValue = null;
+                   if(callback instanceof Method) {
+                       Method response = (Method) callback;
+                       Class.forName(response.getDeclaringClass().getName());
+                       requestParamValue = response.invoke(response.getDeclaringClass().newInstance(), null);
+                   } else if(callback instanceof CallBack) {
+                       CallBack callBack = (CallBack) callback;
+                       requestParamValue = callBack.callBack();
+                   }
                    try {
                        handleResponse(exchange, requestParamValue);
                    } catch (Exception ex) {
                        ex.printStackTrace();
                        exchange.close();
                    }
+
                } catch (Exception e) {
                    e.printStackTrace();
                    exchange.close();
                }
            } else {
                try {
-                   Method response = router.getCallback();
-                   Class.forName(response.getDeclaringClass().getName());
-                   Object requestParamValue = response.invoke(response.getDeclaringClass().newInstance(), params);
+                   Object requestParamValue = null;
+                   Object callback = router.getCallback();
+                   if(callback instanceof Method) {
+                       Method response = (Method) callback;
+                       Class.forName(response.getDeclaringClass().getName());
+                       requestParamValue = response.invoke(response.getDeclaringClass().newInstance(), params);
+                   } else if(callback instanceof CallBack)
+                       requestParamValue = ((CallBack) callback).callBack(params);
                    try {
                        handleResponse(exchange, requestParamValue);
                    } catch (Exception ex) {
@@ -91,8 +118,6 @@ public class BaseHandler implements HttpHandler {
                }
            }
         } else {
-            List<String> splitedPath = Arrays.stream(path.split("/")).collect(Collectors.toList());
-
             notFound(exchange);
         }
 

@@ -1,9 +1,12 @@
-package ws.prospeak.myweb.framework.Illuminate;
+package ws.prospeak.myweb.framework.Illuminate.routing;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 public class RouteFacade {
+
+    public static void get(String route, CallBack callBack) {
+        RouteService.INSTANCE.get(route, callBack);
+    }
 
     public static void get(String route, Class clazz, String callback) {
         RouteService.INSTANCE.get(route, clazz, callback);

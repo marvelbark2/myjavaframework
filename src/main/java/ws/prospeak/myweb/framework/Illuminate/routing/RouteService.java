@@ -1,4 +1,4 @@
-package ws.prospeak.myweb.framework.Illuminate;
+package ws.prospeak.myweb.framework.Illuminate.routing;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -8,6 +8,20 @@ public enum RouteService {
     INSTANCE;
     private List<Router> routers = new ArrayList<>();
 
+    public void get(String route, CallBack callBack) {
+        try {
+            String[] path = route.split("/:");
+            if(path.length >= 2) {
+                String param = path[1];
+                routers.add(new Router(path[0], param, HttpMethod.GET, callBack));
+            } else {
+                String param = null;
+                routers.add(new Router(path[0], param, HttpMethod.GET, callBack));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public void get(String route, Class clazz, String callback) {
         try {
             String[] path = route.split("/:");
