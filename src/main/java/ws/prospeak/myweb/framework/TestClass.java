@@ -4,8 +4,11 @@ import org.apache.commons.lang.StringUtils;
 import ws.prospeak.myweb.framework.Illuminate.collection.Collection;
 import ws.prospeak.myweb.framework.app.models.Users;
 
+import java.util.logging.Logger;
+
 
 public class TestClass {
+    final static Logger logger = Logger.getLogger(TestClass.class.getName());
     public static void main(String[] args) throws Exception {
         String html = "@foreach($edt as $ed)" +
                 "                    {" +
@@ -26,8 +29,9 @@ public class TestClass {
         Collection<Users> allUser = user.all();
         Collection<Users> whereTest = allUser.where("username", "Malik");
 
-        Users findUser = whereTest.find(1L);
-        System.out.println(findUser);
-        System.out.println(user.all());
+        Users findUser = whereTest.find(3L);
+        logger.info(whereTest.toString());
+        logger.info(findUser.toString());
+        logger.info(user.all().toString());
     }
 }
