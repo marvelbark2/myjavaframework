@@ -33,5 +33,7 @@ public class TestClass {
         logger.info(whereTest.toString());
         logger.info(findUser.toString());
         logger.info(user.all().toString());
+        logger.info(allUser.intersaction(whereTest).toString());
+        logger.info(allUser.diff(whereTest).toString());
     }
 }

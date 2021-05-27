@@ -3,6 +3,7 @@ package ws.prospeak.myweb.framework.Illuminate.collection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.bag.HashBag;
 import ws.prospeak.myweb.framework.Illuminate.database.orm.Models;
 
@@ -18,13 +19,9 @@ public class Collection<T> implements Serializable, Bag<T> {
     private Bag<T> collection;
     private final ObjectMapper mapper = new ObjectMapper();
 
+
     public Collection(Object array) {
-        if(array instanceof List) {
-            collection = new HashBag<T>((List) array);
-        }
-        else if(array instanceof Bag) {
-            collection = new HashBag<>((Bag<T>)array);
-        }
+        collection = new HashBag<>((java.util.Collection<T>)array);
     }
 
     public Collection<T> where(Object key, Object sort) {
@@ -200,5 +197,18 @@ public class Collection<T> implements Serializable, Bag<T> {
             }
         }
         return null;
+    }
+
+    public Collection<T> intersaction(Collection<T> b) {
+        Bag aCollection = this.getCollection();
+        Bag bCollection = b.getCollection();
+        Object ab = SetUtils.intersection(aCollection.uniqueSet(), bCollection.uniqueSet());
+        return new Collection<>(ab);
+    }
+    public Collection<T> diff(Collection<T> b) {
+        Bag aCollection = this.getCollection();
+        Bag bCollection = b.getCollection();
+        Object ab = SetUtils.difference(aCollection.uniqueSet(), bCollection.uniqueSet());
+        return new Collection<>(ab);
     }
 }
