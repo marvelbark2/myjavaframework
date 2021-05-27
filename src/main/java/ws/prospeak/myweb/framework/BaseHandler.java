@@ -1,11 +1,12 @@
 package ws.prospeak.myweb.framework;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import org.apache.commons.lang.StringUtils;
+import lombok.SneakyThrows;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ws.prospeak.myweb.framework.Illuminate.routing.CallBack;
 import ws.prospeak.myweb.framework.Illuminate.routing.HttpMethod;
 import ws.prospeak.myweb.framework.Illuminate.routing.RouteFacade;
@@ -14,18 +15,15 @@ import ws.prospeak.myweb.framework.Illuminate.routing.Router;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 
 public class BaseHandler implements HttpHandler {
-    private List<Router> routes;
-    private ObjectMapper mapper = new ObjectMapper();
+    private List<Router> routes = RouteFacade.getRouters();
+    private final  Logger logger = LoggerFactory.getLogger(BaseHandler.class.getName());
 
     public BaseHandler() {
         try {
-            Class.forName("ws.prospeak.myweb.framework.routers.Web");
+            Class.forName("ws.prospeak.myweb.framework.routes.Web");
             routes = RouteFacade.getRouters();
             System.out.println(routes);
         } catch (ClassNotFoundException e) {
@@ -34,96 +32,50 @@ public class BaseHandler implements HttpHandler {
         }
     }
 
+    @SneakyThrows
     @Override
     public void handle(HttpExchange exchange) {
-        Router router = null;
-        Object params = null;
         String path = exchange.getRequestURI().getPath();
-        if(! path.equals("/")) {
-            List<String> routeList = Arrays.stream(path.split("/")).collect(Collectors.toList());
-            if(routeList.size() > 0) {
-                routeList.remove(0);
-                routeList.add(0, "/"+ routeList.remove(0));
-            }
-            LinkedList<String> routeLinkedList = new LinkedList<>(routeList);
-            String pathBase = routeLinkedList.getFirst();
-            for (Router route: routes) {
-                String routeBase = route.getBaseRoute();
-                if(route.getMethod().equals(HttpMethod.GET)) {
-                    if(pathBase.equals(routeBase)) {
-                        if(routeLinkedList.size() == 1 && route.getParam() == null)
-                            router = route;
-                        else if(routeLinkedList.size() > 1 && route.getParam() != null) {
-                            StringUtils.difference("/about/:id/cast", "/about/25/cast");
-                            params = routeLinkedList.getLast();
-                            router = route;
-                        }
-                    }
-
-                }
-                else {
-                    System.out.println(path + " is started with " + routeLinkedList.getFirst());
-                }
-            }
-        } else {
-            router = routes.stream().filter(router1 -> router1.getBaseRoute().equals("/")).findFirst().orElse(null);
-        }
+        Router router = routes
+                .stream()
+                .filter(route -> route.isValidUrl(path) && Objects.equals(HttpMethod.INSTANCE.findMethod(exchange.getRequestMethod()), route.getMethod()))
+                .findAny().orElse(null);
 
         System.out.println(router);
+        System.out.println(exchange.getRequestMethod());
         if(router != null) {
-           if(router.getParam() == null) {
-               try {
-                   Object callback = router.getCallback();
-                   Object requestParamValue = null;
-                   if(callback instanceof Method) {
-                       Method response = (Method) callback;
-                       Class.forName(response.getDeclaringClass().getName());
-                       requestParamValue = response.invoke(response.getDeclaringClass().newInstance(), null);
-                   } else if(callback instanceof CallBack) {
-                       CallBack callBack = (CallBack) callback;
-                       requestParamValue = callBack.callBack();
-                   }
-                   try {
-                       handleResponse(exchange, requestParamValue);
-                   } catch (Exception ex) {
-                       ex.printStackTrace();
-                       exchange.close();
-                   }
-
-               } catch (Exception e) {
-                   e.printStackTrace();
-                   exchange.close();
-               }
-           } else {
-               try {
-                   Object requestParamValue = null;
-                   Object callback = router.getCallback();
-                   if(callback instanceof Method) {
-                       Method response = (Method) callback;
-                       Class.forName(response.getDeclaringClass().getName());
-                       requestParamValue = response.invoke(response.getDeclaringClass().newInstance(), params);
-                   } else if(callback instanceof CallBack)
-                       requestParamValue = ((CallBack) callback).callBack(params);
-                   try {
-                       handleResponse(exchange, requestParamValue);
-                   } catch (Exception ex) {
-                       ex.printStackTrace();
-                   }
-               } catch (Exception e) {
-                   e.printStackTrace();
-                   exchange.close();
-               }
-           }
+            if(!router.isContainParams()) {
+                Object callback = router.getCallback();
+                Object requestParamValue = null;
+                if(callback instanceof Method) {
+                    Method response = (Method) callback;
+                    Class.forName(response.getDeclaringClass().getName());
+                    requestParamValue = response.invoke(response.getDeclaringClass().newInstance(), null);
+                } else if(callback instanceof CallBack) {
+                    CallBack callBack = (CallBack) callback;
+                    requestParamValue = callBack.callBack();
+                }
+                handleResponse(exchange, requestParamValue);
+            } else {
+                Object requestParamValue = null;
+                Object[] params = router.values(path);
+                Object callback = router.getCallback();
+                if(callback instanceof Method) {
+                    Method response = (Method) callback;
+                    Class.forName(response.getDeclaringClass().getName());
+                    requestParamValue = response.invoke(response.getDeclaringClass().newInstance(), params);
+                } else if(callback instanceof CallBack)
+                    requestParamValue = ((CallBack) callback).callBack(params);
+                handleResponse(exchange, requestParamValue);
+            }
         } else {
             notFound(exchange);
         }
-
     }
     private void handleResponse(HttpExchange httpExchange, Object callback) throws Exception {
         OutputStream outputStream = httpExchange.getResponseBody();
-
         String htmlResponse = callback.toString();
-
+        logger.info("Response is {}", htmlResponse);
         // this line is a must
         httpExchange.sendResponseHeaders(200, htmlResponse.length());
         PrintWriter writer = new PrintWriter(outputStream);

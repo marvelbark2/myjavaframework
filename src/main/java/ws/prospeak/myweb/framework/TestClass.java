@@ -1,29 +1,33 @@
 package ws.prospeak.myweb.framework;
 
-import org.javalite.activejdbc.Base;
-import org.javalite.activejdbc.LazyList;
+import org.apache.commons.lang.StringUtils;
+import ws.prospeak.myweb.framework.Illuminate.collection.Collection;
 import ws.prospeak.myweb.framework.app.models.Users;
-import ws.prospeak.myweb.framework.config.DatabaseConfig;
 
-import java.util.List;
-import java.util.Map;
 
 public class TestClass {
-    public static void main(String[] args) {
-        Users users = new Users();
-       /*
+    public static void main(String[] args) throws Exception {
+        String html = "@foreach($edt as $ed)" +
+                "                    {" +
+                "                      id: {{$ed->id}},\n" +
+                "                      title: \"{{$ed->title}}\",\n" +
+                "                      start: \"{{$ed->start_at}}\",\n" +
+                "                      end: \"{{$ed->end_at}}\"\n" +
+                "                    }," +
+                "                    @endforeach";
+        System.out.println(StringUtils.substringBetween(html, "@foreach", "@endforeach"));
 
-        users.setId(7L);
-        users.setName("Younes");
-        users.setUsername("Prospeak");
-        users.setPassword("aqwzsxedc");
+        Users user = new Users();
+//        user.setId(9L);
+//        user.setName("Leonardo 12");
+//        user.setUsername("Leonardo");
+//        user.setPassword("Leonardo1201");
+//        Users userSave = user.save();
+        Collection<Users> allUser = user.all();
+        Collection<Users> whereTest = allUser.where("username", "Malik");
 
-        users.saveNow();*/
-//        users.list();
-        List<Users> list = Users.findAll();
-
-        System.out.println(users.all());
-
-        Base.close();
+        Users findUser = whereTest.find(1L);
+        System.out.println(findUser);
+        System.out.println(user.all());
     }
 }
