@@ -14,6 +14,9 @@ public class RouteFacade {
     public static void post(String route, Class clazz, String callback) {
         RouteService.INSTANCE.post(route,clazz,callback);
     }
+    public static void post(String route, PostCallBack callBack) {
+        RouteService.INSTANCE.post(route, callBack);
+    }
 
     public static void delete(String route, Class clazz, String callback) {
         RouteService.INSTANCE.delete(route,clazz,callback);

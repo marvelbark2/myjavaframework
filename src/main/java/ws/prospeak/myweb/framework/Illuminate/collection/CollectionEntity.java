@@ -1,10 +1,14 @@
 package ws.prospeak.myweb.framework.Illuminate.collection;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
+import org.apache.commons.beanutils.BeanComparator;
 import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.comparators.ComparatorChain;
 import ws.prospeak.myweb.framework.Illuminate.database.orm.Models;
 
 import java.io.IOException;
@@ -15,16 +19,30 @@ import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public class Collection<T> implements Serializable, Bag<T> {
-    private Bag<T> collection;
+public class CollectionEntity<T> implements Serializable, Collection<T> {
+    private static final long serialVersionUID = 941747885320975292L;
+
+    private final Collection<T> collection;
     private final ObjectMapper mapper = new ObjectMapper();
 
 
-    public Collection(Object array) {
+    public CollectionEntity(Object array) {
         collection = new HashBag<>((java.util.Collection<T>)array);
+        mapper.registerModule(new JavaTimeModule());
+    }
+    public CollectionEntity(LinkedList<T> array) {
+        mapper.registerModule(new JavaTimeModule());
+        collection = CollectionUtils.emptyIfNull(array);
+        Set<T> hSet = new HashSet<>();
+        for (T x : array)
+            hSet.add(x);
+
+        System.out.println("Created HashSet is");
+        for (T x : hSet)
+            System.out.println(x);
     }
 
-    public Collection<T> where(Object key, Object sort) {
+    public CollectionEntity<T> where(Object key, Object sort) {
         Bag<T> bag = new HashBag<>();
         for (Object o: collection) {
             Models model = (Models) o;
@@ -32,11 +50,15 @@ public class Collection<T> implements Serializable, Bag<T> {
             if(String.valueOf(hm.get(key)).equals(String.valueOf(sort)))
                 bag.add((T) model);
         }
-        return new Collection<>(bag);
+        return new CollectionEntity<>(bag);
     }
 
 
-    public Bag getCollection() {
+    public Bag<T> toBag() {
+        return (Bag<T>) collection;
+    }
+
+    public Collection<T> getCollection() {
         return collection;
     }
 
@@ -46,9 +68,8 @@ public class Collection<T> implements Serializable, Bag<T> {
         return mapper.writeValueAsString(this.collection);
     }
 
-    @Override
     public int getCount(Object o) {
-        return collection.getCount(o);
+        return ((Bag<T>) collection).getCount(o);
     }
 
     @Override
@@ -56,9 +77,8 @@ public class Collection<T> implements Serializable, Bag<T> {
         return collection.add(t);
     }
 
-    @Override
     public boolean add(T t, int i) {
-        return collection.add(t, i);
+        return ((Bag<T>) collection).add(t, i);
     }
 
     @Override
@@ -66,14 +86,12 @@ public class Collection<T> implements Serializable, Bag<T> {
         return collection.remove(o);
     }
 
-    @Override
     public boolean remove(Object o, int i) {
-        return remove(o, i);
+        return ((Bag<T>) collection).remove(o, i);
     }
 
-    @Override
     public Set<T> uniqueSet() {
-        return collection.uniqueSet();
+        return ((Bag<T>) collection).uniqueSet();
     }
 
     @Override
@@ -156,12 +174,14 @@ public class Collection<T> implements Serializable, Bag<T> {
         return collection.toArray(a);
     }
 
+
+
     @Override
     public <T1> T1[] toArray(IntFunction<T1[]> generator) {
         return collection.toArray(generator);
     }
 
-    public Collection<T> execpt(Object key) {
+    public CollectionEntity<T> execpt(Object key) {
         Bag<T> bag = new HashBag<>();
         for (Object o: collection) {
             Models model = (Models) o;
@@ -170,9 +190,9 @@ public class Collection<T> implements Serializable, Bag<T> {
             T newModel = (T) mapper.convertValue(hm, Object.class);
             bag.add(newModel);
         }
-        return new Collection<>(bag);
+        return new CollectionEntity<>(bag);
     }
-    public Collection<Object> modelKeys() {
+    public CollectionEntity<Object> modelKeys() {
         Bag<Object> bag = new HashBag<>();
         for (Object o: collection) {
             Models model = (Models) o;
@@ -181,11 +201,11 @@ public class Collection<T> implements Serializable, Bag<T> {
             String key = keyAssigned == null ? "id" : keyAssigned;
             bag.add(hm.get(key));
         }
-        return new Collection<>(bag);
+        return new CollectionEntity<>(bag);
     }
 
     public T find(Object id) throws IOException {
-        Collection<T> self = this;
+        CollectionEntity<T> self = this;
         for (T t: self) {
             Models model = (Models) t;
             Map hm = model.map();
@@ -199,16 +219,32 @@ public class Collection<T> implements Serializable, Bag<T> {
         return null;
     }
 
-    public Collection<T> intersaction(Collection<T> b) {
-        Bag aCollection = this.getCollection();
-        Bag bCollection = b.getCollection();
+    public CollectionEntity<T> intersaction(CollectionEntity<T> b) {
+        Bag<T> aCollection = this.toBag();
+        Bag<T> bCollection = b.toBag();
         Object ab = SetUtils.intersection(aCollection.uniqueSet(), bCollection.uniqueSet());
-        return new Collection<>(ab);
+        return new CollectionEntity<>(ab);
     }
-    public Collection<T> diff(Collection<T> b) {
-        Bag aCollection = this.getCollection();
-        Bag bCollection = b.getCollection();
+
+    public CollectionEntity<T> diff(CollectionEntity<T> b) {
+        Bag<T> aCollection = this.toBag();
+        Bag<T> bCollection = b.toBag();
         Object ab = SetUtils.difference(aCollection.uniqueSet(), bCollection.uniqueSet());
-        return new Collection<>(ab);
+        return new CollectionEntity<>(ab);
     }
+
+    public CollectionEntity<T> union(CollectionEntity<T> b) {
+        Bag<T> aCollection = this.toBag();
+        Bag<T> bCollection = b.toBag();
+        Object ab = SetUtils.union(aCollection.uniqueSet(), bCollection.uniqueSet());
+        return new CollectionEntity<>(ab);
+    }
+    public CollectionEntity<T> sortBy(Object key) {
+        List<T> aCollection = new ArrayList<>(this.getCollection());
+        ComparatorChain<T> comparator = new ComparatorChain<>();
+        comparator.addComparator(new BeanComparator(String.valueOf(key)));
+        aCollection.sort(comparator);
+        return new CollectionEntity<>(new LinkedList<>(aCollection));
+    }
+
 }

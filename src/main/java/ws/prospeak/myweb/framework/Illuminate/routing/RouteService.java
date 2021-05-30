@@ -44,7 +44,13 @@ public enum RouteService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+    }
+    public void post(String route, PostCallBack callBack) {
+        try {
+            routers.add(new Router(route, HttpMethod.POST, callBack));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void delete(String route, Class clazz, String callback) {

@@ -1,15 +1,14 @@
 package ws.prospeak.myweb.framework.Illuminate.database.orm;
 
-import lombok.With;
+import ws.prospeak.myweb.framework.Illuminate.collection.CollectionEntity;
 
-import javax.persistence.Entity;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.rmi.Remote;
 
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Model {
-    Entity value();
+public interface Model extends Remote {
+    String json() throws Exception;
+    <T extends Models> T save() throws Exception;
+    Boolean checkEncrypted(String checkpw) throws Exception;
+    <T extends Models> CollectionEntity<T> all() throws Exception;
+    <T extends  Models>  T find(Object id) throws Exception;
+
 }

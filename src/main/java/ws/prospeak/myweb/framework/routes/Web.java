@@ -1,9 +1,13 @@
 package ws.prospeak.myweb.framework.routes;
 
 import ws.prospeak.myweb.framework.Illuminate.routing.CallBack;
+import ws.prospeak.myweb.framework.Illuminate.routing.PostCallBack;
+import ws.prospeak.myweb.framework.Illuminate.routing.Request;
 import ws.prospeak.myweb.framework.Illuminate.routing.RouteFacade;
 import ws.prospeak.myweb.framework.app.controllers.Controller;
 import ws.prospeak.myweb.framework.app.models.Users;
+
+import java.util.Map;
 
 public enum Web {
     INSTANCE;
@@ -53,6 +57,26 @@ public enum Web {
                     exception.printStackTrace();
                 }
                 return null;
+            }
+        });
+
+        RouteFacade.post("/testPost", new PostCallBack() {
+            @Override
+            public Object callBack(Request request) {
+                return Map.of(
+                        "ip", request.requestIp(),
+                        "user", request.getUserInfo(),
+                        "path", request.getFullPath(),
+                        "header", request.headers()
+                );
+            }
+        });
+
+        RouteFacade.get("/testExcept/{id}", new CallBack() {
+            @Override
+            public Object callBack(Object... t) {
+                String str = String.valueOf(t[0]);
+                return 15/ Integer.parseInt(str);
             }
         });
     }
